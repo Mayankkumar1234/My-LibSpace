@@ -3,11 +3,14 @@ import Book from "../models/book.model.js";
 const bookController = {
   addBook: async (req, res) => {
     const { url, title, author } = req.body;
+
     if (!url || !title || !author) {
       return res.status(400).send({
         msg: "All fields are required",
       });
     }
+    console.log(req.user);
+    const { id } = req.user;
     try {
       const checkIsAval = await Book.findOne({ title: title });
       if (checkIsAval) {
@@ -15,6 +18,7 @@ const bookController = {
       }
       const newBook = new Book({
         url,
+        user: id,
         title,
         author,
       });
@@ -26,8 +30,9 @@ const bookController = {
   },
   getBookById: async (req, res) => {
     const { bookId } = req.params;
+    const { id } = req.user;
     try {
-      const singleBook = await Book.findById({ _id: bookId });
+      const singleBook = await Book.find({ _id: bookId, user: id });
       if (!singleBook) {
         return res.status(404).send({ msg: "Please enter a valid Id" });
       }
@@ -37,8 +42,9 @@ const bookController = {
     }
   },
   getAllBooks: async (req, res) => {
+    const { id } = req.user;
     try {
-      const allBooks = await Book.find();
+      const allBooks = await Book.find({ user: id });
       if (!allBooks) {
         return res.status(200).send({ msg: "Empty" });
       }
@@ -50,7 +56,7 @@ const bookController = {
   updateBook: async (req, res) => {
     try {
       const bookId = req.params.bookId;
-      const book = await Book.findById(bookId);
+      const book = await Book.findBy({ _id: bookId, user: id });
       if (!book) {
         return res.status(404).send({ msg: "Book not found" });
       }
@@ -62,9 +68,10 @@ const bookController = {
     }
   },
   deleteBook: async (req, res) => {
+    const { id } = req.user;
     try {
       let { bookId } = req.params;
-      let book = await Book.findById({ _id: bookId });
+      let book = await Book.findById({ _id: bookId, user: id });
       if (!book) {
         return res.status(404).send({ msg: "Book not found" });
       }

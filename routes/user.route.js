@@ -1,11 +1,11 @@
-import userController from "../controller/user.js";
+import userController from "../controller/authController.js";
 import express from "express";
 import { verifyToken } from "../middlewares/verify_token.js";
 let userRouter = express.Router();
 
 userRouter.post("/register", userController.registerUser);
 userRouter.post("/login", userController.loginUser);
-userRouter.get("/logout", verifyToken, userController.logoutUser);
+userRouter.get("/logout", userController.logoutUser);
 
 userRouter.delete("/:userId", verifyToken, userController.deleteUser);
 

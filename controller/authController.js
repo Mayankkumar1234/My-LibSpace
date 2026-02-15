@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import BlackList from "../models/blackListerToken.js";
 
 const userController = {
   registerUser: async (req, res) => {
@@ -21,7 +22,7 @@ const userController = {
           message: "Account already exists, please login",
         });
       }
-      const hashPassword = await bcrpyt.hash(password, 10);
+      const hashPassword = await bcrypt.hash(password, 10);
       const newUser = new User({
         name,
         email,
@@ -60,11 +61,11 @@ const userController = {
         });
       }
 
-      bcrypt.compare(password, checkExists[0].password, (err, result) => {
+      await bcrypt.compare(password, checkExists[0].password, (err, result) => {
         console.log(result);
         if (result) {
           const token = jwt.sign(
-            { id: checkExists._id, email: checkExists.email },
+            { id: checkExists[0]._id, email: checkExists[0].email },
             process.env.SECRET_KEY,
             {
               expiresIn: "1h",
@@ -103,7 +104,19 @@ const userController = {
     }
   },
   logoutUser: async (req, res) => {
-    res.status(200).send({ msg: "User has logged out successfully" });
+    let token = req.headers.authorization.split(" ")[1];
+    let blackList = await BlackList.findOne({ token: token });
+    if (blackList) {
+      return res
+        .status(401)
+        .send({ msg: "User has already logged out, please login" });
+    } else {
+      res.status(200).send({ msg: "User has logged out successfully" });
+      let blackListedToken = new BlackList({
+        token: token,
+      });
+      await blackListedToken.save();
+    }
   },
 };
 
